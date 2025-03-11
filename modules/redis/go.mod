@@ -12,7 +12,10 @@ require (
 
 )
 
-replace github.com/testcontainers/testcontainers-go => ../..
+replace (
+	github.com/testcontainers/testcontainers-go v0.35.0 => github.com/timofurrer/testcontainers-go v1.99.99
+)
+
 
 require (
 	dario.cat/mergo v1.0.0 // indirect

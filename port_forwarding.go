@@ -169,7 +169,7 @@ func exposeHostPorts(ctx context.Context, req *ContainerRequest, host string, po
 	sshdConnectHook = ContainerLifecycleHooks{
 		PostReadies: []ContainerHook{
 			func(ctx context.Context, _ Container) error {
-				return sshdContainer.exposeHostPort(ctx, req.HostAccessPorts...)
+				return sshdContainer.exposeHostPort(ctx, sshdIP, req.HostAccessPorts...)
 			},
 		},
 		PreStops:      stopHooks,
@@ -272,14 +272,14 @@ func (sshdC *sshdContainer) clientConfig(ctx context.Context, host string) error
 }
 
 // exposeHostPort exposes the host ports to the container.
-func (sshdC *sshdContainer) exposeHostPort(ctx context.Context, ports ...int) (err error) {
+func (sshdC *sshdContainer) exposeHostPort(ctx context.Context, host string, ports ...int) (err error) {
 	defer func() {
 		if err != nil {
 			err = errors.Join(err, sshdC.closePorts())
 		}
 	}()
 	for _, port := range ports {
-		pf, err := newPortForwarder(ctx, sshdC.host+":"+sshdC.port, sshdC.sshConfig, port)
+		pf, err := newPortForwarder(ctx, host+":"+sshdC.port, sshdC.sshConfig, port)
 		if err != nil {
 			return fmt.Errorf("new port forwarder: %w", err)
 		}

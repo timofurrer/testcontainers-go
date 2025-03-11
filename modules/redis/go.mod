@@ -13,7 +13,7 @@ require (
 )
 
 replace (
-	github.com/testcontainers/testcontainers-go v0.35.0 => github.com/timofurrer/testcontainers-go v1.99.99
+	github.com/testcontainers/testcontainers-go v0.35.0 => github.com/timofurrer/testcontainers-go v1.99.43
 )
 
 

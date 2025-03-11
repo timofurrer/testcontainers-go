@@ -207,7 +207,7 @@ func newSshdContainer(ctx context.Context, host string, opts ...ContainerCustomi
 		return sshd, fmt.Errorf("generic container: %w", err)
 	}
 
-	if err = sshd.clientConfig(ctx); err != nil {
+	if err = sshd.clientConfig(ctx, host); err != nil {
 		// Return the container and the error to the caller to handle it.
 		return sshd, err
 	}
@@ -254,12 +254,13 @@ func (sshdC *sshdContainer) closePorts() error {
 }
 
 // clientConfig sets up the SSHD client configuration.
-func (sshdC *sshdContainer) clientConfig(ctx context.Context) error {
+func (sshdC *sshdContainer) clientConfig(ctx context.Context, host string) error {
 	mappedPort, err := sshdC.MappedPort(ctx, sshPort)
 	if err != nil {
 		return fmt.Errorf("mapped port: %w", err)
 	}
 
+	sshdC.host = host
 	sshdC.port = mappedPort.Port()
 	sshdC.sshConfig = &ssh.ClientConfig{
 		User:            user,

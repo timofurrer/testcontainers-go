@@ -39,7 +39,7 @@ var sshPassword = uuid.NewString()
 // 1. Create a new SSHD container.
 // 2. Expose the host ports to the container after the container is ready.
 // 3. Close the SSH sessions before killing the container.
-func exposeHostPorts(ctx context.Context, req *ContainerRequest, ports ...int) (sshdConnectHook ContainerLifecycleHooks, err error) {
+func exposeHostPorts(ctx context.Context, req *ContainerRequest, host string, ports ...int) (sshdConnectHook ContainerLifecycleHooks, err error) {
 	if len(ports) == 0 {
 		return sshdConnectHook, errors.New("no ports to expose")
 	}
@@ -89,7 +89,7 @@ func exposeHostPorts(ctx context.Context, req *ContainerRequest, ports ...int) (
 	}
 
 	// start the SSHD container with the provided options
-	sshdContainer, err := newSshdContainer(ctx, opts...)
+	sshdContainer, err := newSshdContainer(ctx, host, opts...)
 	// Ensure the SSHD container is stopped and removed in case of error.
 	defer func() {
 		if err != nil {
@@ -180,7 +180,7 @@ func exposeHostPorts(ctx context.Context, req *ContainerRequest, ports ...int) (
 }
 
 // newSshdContainer creates a new SSHD container with the provided options.
-func newSshdContainer(ctx context.Context, opts ...ContainerCustomizer) (*sshdContainer, error) {
+func newSshdContainer(ctx context.Context, host string, opts ...ContainerCustomizer) (*sshdContainer, error) {
 	req := GenericContainerRequest{
 		ContainerRequest: ContainerRequest{
 			Image:        sshdImage,
@@ -200,7 +200,7 @@ func newSshdContainer(ctx context.Context, opts ...ContainerCustomizer) (*sshdCo
 	c, err := GenericContainer(ctx, req)
 	var sshd *sshdContainer
 	if c != nil {
-		sshd = &sshdContainer{Container: c}
+		sshd = &sshdContainer{Container: c, host: host}
 	}
 
 	if err != nil {
@@ -219,6 +219,7 @@ func newSshdContainer(ctx context.Context, opts ...ContainerCustomizer) (*sshdCo
 // It's an internal type that extends the DockerContainer type, to add the SSH tunnelling capabilities.
 type sshdContainer struct {
 	Container
+	host           string
 	port           string
 	sshConfig      *ssh.ClientConfig
 	portForwarders []*portForwarder
@@ -277,7 +278,7 @@ func (sshdC *sshdContainer) exposeHostPort(ctx context.Context, ports ...int) (e
 		}
 	}()
 	for _, port := range ports {
-		pf, err := newPortForwarder(ctx, "localhost:"+sshdC.port, sshdC.sshConfig, port)
+		pf, err := newPortForwarder(ctx, sshdC.host+":"+sshdC.port, sshdC.sshConfig, port)
 		if err != nil {
 			return fmt.Errorf("new port forwarder: %w", err)
 		}
